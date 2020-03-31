@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 2.8.12)
+
+# CUDA 9 does not support gcc/g++ with version later than 6. If you are
+# using CUDA 10, there is no need to enforce gcc/g++ 6 here.
+# Beware that using set() in CMakeLists to change compiler is discouraged,
+# https://gitlab.kitware.com/cmake/community/wikis/FAQ#method-1-use-environment-variables
+# and can result in circular loop when invoking catkin build.
+# https://github.com/ros/catkin/issues/121
+set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
+set(CMAKE_CPP_COMPILER "/usr/bin/g++-6")
+
 project(darknet_ros)
 
 # Set c++11 cmake flags
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
-set(CMAKE_CPP_COMPILER "/usr/bin/g++-6")
 
 # Define path of darknet folder here.
 find_path(DARKNET_PATH
@@ -23,14 +31,14 @@ if (CUDA_FOUND)
     CUDA_NVCC_FLAGS
     ${CUDA_NVCC_FLAGS};
     -O3
-    -gencode arch=compute_20,code=[sm_20,sm_21]
-    -gencode arch=compute_30,code=sm_30
-    -gencode arch=compute_35,code=sm_35
-    -gencode arch=compute_50,code=[sm_50,compute_50]
-    -gencode arch=compute_52,code=[sm_52,compute_52]
+    # -gencode arch=compute_20,code=[sm_20,sm_21]
+    # -gencode arch=compute_30,code=sm_30
+    # -gencode arch=compute_35,code=sm_35
+    # -gencode arch=compute_50,code=[sm_50,compute_50]
+    # -gencode arch=compute_52,code=[sm_52,compute_52]
     -gencode arch=compute_61,code=sm_61
     -gencode arch=compute_62,code=sm_62
-    --std=c++11
+    # -gencode arch=compute_75,code=sm_75
   )
   add_definitions(-DGPU)
 else()
@@ -49,7 +57,7 @@ ENDIF ( X11_FOUND )
 
 # Find rquired packeges
 find_package(Boost REQUIRED COMPONENTS thread)
-find_package(OpenCV 2 REQUIRED)
+find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(catkin REQUIRED
   COMPONENTS
@@ -94,7 +102,7 @@ include_directories(
 if (CUDA_FOUND)
 
   link_directories(
-    /usr/local/cuda/lib64
+    /usr/local/cuda-9.0/lib64
   )
 
   cuda_add_library(${PROJECT_NAME}_lib
@@ -152,7 +160,7 @@ if (CUDA_FOUND)
     ${Boost_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
+    # ${OpenCV_LIBS}
   )
 
   cuda_add_executable(${PROJECT_NAME}
@@ -206,7 +214,7 @@ else()
     ${Boost_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
+    # ${OpenCV_LIBS}
   )
 
   add_executable(${PROJECT_NAME}
@@ -280,5 +288,8 @@ if(CATKIN_ENABLE_TESTING)
   )
   target_link_libraries(${PROJECT_NAME}_object_detection-test
     ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    ${catkin_LIBRARIES}
+    # ${OpenCV_LIBS}
   )
 endif()
